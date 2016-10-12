@@ -4,12 +4,14 @@
 /* Classes */
 const Game = require('./game.js');
 const Player = require('./player.js');
+const EntityManager = require('./entity-manager.js');
 
 /* Global variables */
 var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
-var player = new Player({x: canvas.width/2, y: canvas.height/2}, canvas);
-
+var em = new EntityManager(canvas);
+var player = new Player({x: canvas.width/2, y: canvas.height/2}, canvas, em);
+em.addPlayer(player);
 /**
  * @function masterLoop
  * Advances the game in sync with the refresh rate of the screen
@@ -31,7 +33,7 @@ masterLoop(performance.now());
  * the number of milliseconds passed since the last frame.
  */
 function update(elapsedTime) {
-  player.update(elapsedTime);
+  em.update(elapsedTime);
   // TODO: Update the game objects
 }
 
@@ -45,10 +47,119 @@ function update(elapsedTime) {
 function render(elapsedTime, ctx) {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  player.render(elapsedTime, ctx);
+  em.render(elapsedTime, ctx);
 }
 
-},{"./game.js":2,"./player.js":3}],2:[function(require,module,exports){
+},{"./entity-manager.js":3,"./game.js":4,"./player.js":5}],2:[function(require,module,exports){
+"use strict";
+
+const MS_PER_FRAME = 1000/8;
+
+/**
+ * @module exports the Bullet class
+ */
+module.exports = exports = Bullet;
+
+/**
+ * @constructor Bullet
+ * Creates a new player object
+ * @param {Postition} position object specifying an x and y
+ */
+function Bullet(x,y, angle) {
+  this.state = "idle";
+  console.log(x);
+  //console.log(this.position.y);
+  this.x = x;
+  this.y = y;
+  this.absVelocity = 4;
+  this.velocity = {
+    x: Math.sin(angle)* this.absVelocity,
+    y: Math.cos(angle)* this.absVelocity
+};
+
+  this.angle = angle;
+  this.radius  = 2;
+}
+
+
+
+/**
+ * @function updates the player object
+ * {DOMHighResTimeStamp} time the elapsed time since the last frame
+ */
+Bullet.prototype.update = function(time) {
+  // Apply velocity
+  this.x -= this.velocity.x;
+  this.y -= this.velocity.y;
+}
+
+/**
+ * @function renders the player into the provided context
+ * {DOMHighResTimeStamp} time the elapsed time since the last frame
+ * {CanvasRenderingContext2D} ctx the context to render into
+ */
+Bullet.prototype.render = function(time, ctx) {
+  ctx.save();
+  // Draw bullet
+  ctx.translate(this.x, this.y);
+  ctx.rotate(-this.angle);
+  ctx.beginPath();
+  ctx.moveTo(-3, 0);
+  ctx.lineTo(-3, 5);
+  ctx.lineTo(3, 5);
+  ctx.lineTo(3, 0);
+  ctx.closePath();
+  ctx.fillStyle = 'white';
+  ctx.fill();
+
+
+  ctx.restore();
+}
+
+},{}],3:[function(require,module,exports){
+"use strict";
+module.exports = exports = EntityManager;
+
+function EntityManager(canvas){
+    this.wWidth = canvas.width;
+    this.wHeight = canvas.height;
+    this.player = undefined;
+    this.bullets = [];
+}
+
+EntityManager.prototype.addPlayer = function(player){
+    this.player = player;
+}
+
+EntityManager.prototype.addBullet = function(bullet){
+    this.bullets.push(bullet);
+    console.log(this.bullets);
+}
+
+EntityManager.prototype.update = function(time){
+    this.player.update(time);
+    var index = 0;
+    var self = this;
+    this.bullets.forEach(function(b){
+        if(b.x < 0) self.bullets.splice(index,1);
+        if(b.y < 0) self.bullets.splice(index,1);
+        if(b.x > self.wWidth) self.bullets.splice(index,1);
+        if(b.y > self.wHeight) self.bullets.splice(index,1);
+        index++;
+    });
+    this.bullets.forEach(function(b){
+        b.update(time);
+    });
+}
+
+EntityManager.prototype.render = function(time, ctx){
+    this.player.render(time, ctx);
+    this.bullets.forEach(function(b){
+        b.render(time, ctx);
+    });
+}
+
+},{}],4:[function(require,module,exports){
 "use strict";
 
 /**
@@ -106,7 +217,7 @@ Game.prototype.loop = function(newTime) {
   this.frontCtx.drawImage(this.backBuffer, 0, 0);
 }
 
-},{}],3:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 const MS_PER_FRAME = 1000/8;
@@ -116,14 +227,18 @@ const MS_PER_FRAME = 1000/8;
  */
 module.exports = exports = Player;
 
+const Bullet = require('./bullet.js');
+const EntityManager = require('./entity-manager.js');
+
 /**
  * @constructor Player
  * Creates a new player object
  * @param {Postition} position object specifying an x and y
  */
-function Player(position, canvas) {
+function Player(position, canvas, em) {
   this.worldWidth = canvas.width;
   this.worldHeight = canvas.height;
+  this.time = 0;
   this.state = "idle";
   this.position = {
     x: position.x,
@@ -138,6 +253,9 @@ function Player(position, canvas) {
   this.thrusting = false;
   this.steerLeft = false;
   this.steerRight = false;
+  this.fire = false;
+  this.em = em;
+
 
   var self = this;
   window.onkeydown = function(event) {
@@ -153,6 +271,9 @@ function Player(position, canvas) {
       case 'ArrowRight': // right
       case 'd':
         self.steerRight = true;
+        break;
+      case ' ':
+        self.fire = true;
         break;
     }
   }
@@ -171,6 +292,9 @@ function Player(position, canvas) {
       case 'd':
         self.steerRight = false;
         break;
+    case ' ':
+      self.fire = false;
+      break;
     }
   }
 }
@@ -195,8 +319,8 @@ Player.prototype.update = function(time) {
       x: Math.sin(this.angle),
       y: Math.cos(this.angle)
     }
-    this.velocity.x -= acceleration.x;
-    this.velocity.y -= acceleration.y;
+    this.velocity.x -= acceleration.x/3;
+    this.velocity.y -= acceleration.y/3;
   }
   // Apply velocity
   this.position.x += this.velocity.x;
@@ -206,6 +330,18 @@ Player.prototype.update = function(time) {
   if(this.position.x > this.worldWidth) this.position.x -= this.worldWidth;
   if(this.position.y < 0) this.position.y += this.worldHeight;
   if(this.position.y > this.worldHeight) this.position.y -= this.worldHeight;
+
+  //delete bullets that left the world
+  this.time+=time
+  if(this.time > MS_PER_FRAME && this.fire){
+      console.log(this.position);
+
+      var bullet = new Bullet(this.position.x,this.position.y, this.angle);
+      console.log(bullet);
+      this.em.addBullet(bullet);
+      console.log(this.em);
+      this.time = 0;
+  }
 }
 
 /**
@@ -241,4 +377,4 @@ Player.prototype.render = function(time, ctx) {
   ctx.restore();
 }
 
-},{}]},{},[1]);
+},{"./bullet.js":2,"./entity-manager.js":3}]},{},[1]);

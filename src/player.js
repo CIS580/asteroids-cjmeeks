@@ -7,14 +7,18 @@ const MS_PER_FRAME = 1000/8;
  */
 module.exports = exports = Player;
 
+const Bullet = require('./bullet.js');
+const EntityManager = require('./entity-manager.js');
+
 /**
  * @constructor Player
  * Creates a new player object
  * @param {Postition} position object specifying an x and y
  */
-function Player(position, canvas) {
+function Player(position, canvas, em) {
   this.worldWidth = canvas.width;
   this.worldHeight = canvas.height;
+  this.time = 0;
   this.state = "idle";
   this.position = {
     x: position.x,
@@ -29,6 +33,9 @@ function Player(position, canvas) {
   this.thrusting = false;
   this.steerLeft = false;
   this.steerRight = false;
+  this.fire = false;
+  this.em = em;
+
 
   var self = this;
   window.onkeydown = function(event) {
@@ -44,6 +51,9 @@ function Player(position, canvas) {
       case 'ArrowRight': // right
       case 'd':
         self.steerRight = true;
+        break;
+      case ' ':
+        self.fire = true;
         break;
     }
   }
@@ -62,6 +72,9 @@ function Player(position, canvas) {
       case 'd':
         self.steerRight = false;
         break;
+    case ' ':
+      self.fire = false;
+      break;
     }
   }
 }
@@ -86,8 +99,8 @@ Player.prototype.update = function(time) {
       x: Math.sin(this.angle),
       y: Math.cos(this.angle)
     }
-    this.velocity.x -= acceleration.x;
-    this.velocity.y -= acceleration.y;
+    this.velocity.x -= acceleration.x/3;
+    this.velocity.y -= acceleration.y/3;
   }
   // Apply velocity
   this.position.x += this.velocity.x;
@@ -97,6 +110,18 @@ Player.prototype.update = function(time) {
   if(this.position.x > this.worldWidth) this.position.x -= this.worldWidth;
   if(this.position.y < 0) this.position.y += this.worldHeight;
   if(this.position.y > this.worldHeight) this.position.y -= this.worldHeight;
+
+  //delete bullets that left the world
+  this.time+=time
+  if(this.time > MS_PER_FRAME && this.fire){
+      console.log(this.position);
+
+      var bullet = new Bullet(this.position.x,this.position.y, this.angle);
+      console.log(bullet);
+      this.em.addBullet(bullet);
+      console.log(this.em);
+      this.time = 0;
+  }
 }
 
 /**
