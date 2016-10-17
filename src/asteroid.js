@@ -3,29 +3,27 @@
 const MS_PER_FRAME = 1000/8;
 
 /**
- * @module exports the Bullet class
+ * @module exports the Asteroid class
  */
-module.exports = exports = Bullet;
+module.exports = exports = Asteroid;
 
 /**
- * @constructor Bullet
+ * @constructor Asteroid
  * Creates a new player object
  * @param {Postition} position object specifying an x and y
  */
-function Bullet(x,y, angle) {
+function Asteroid(x,y, velocity, angle, radius) {
   this.state = "idle";
   console.log(x);
   //console.log(this.position.y);
   this.x = x;
   this.y = y;
-  this.absVelocity = 4;
+  this.radius = radius;
   this.velocity = {
-    x: Math.sin(angle)* this.absVelocity,
-    y: Math.cos(angle)* this.absVelocity
+    x: Math.sin(angle)* velocity,
+    y: Math.cos(angle)* velocity
 };
-
   this.angle = angle;
-  this.radius  = 2;
 }
 
 
@@ -34,7 +32,7 @@ function Bullet(x,y, angle) {
  * @function updates the player object
  * {DOMHighResTimeStamp} time the elapsed time since the last frame
  */
-Bullet.prototype.update = function(time) {
+Asteroid.prototype.update = function(time) {
   // Apply velocity
   this.x -= this.velocity.x;
   this.y -= this.velocity.y;
@@ -45,20 +43,14 @@ Bullet.prototype.update = function(time) {
  * {DOMHighResTimeStamp} time the elapsed time since the last frame
  * {CanvasRenderingContext2D} ctx the context to render into
  */
-Bullet.prototype.render = function(time, ctx) {
+Asteroid.prototype.render = function(time, ctx) {
   ctx.save();
   // Draw bullet
   ctx.translate(this.x, this.y);
-  ctx.rotate(-this.angle);
   ctx.beginPath();
-  ctx.moveTo(-3, 0);
-  ctx.lineTo(-3, 5);
-  ctx.lineTo(3, 5);
-  ctx.lineTo(3, 0);
+  ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false);
   ctx.closePath();
-  ctx.fillStyle = 'white';
-  ctx.fill();
-
-
+  ctx.strokeStyle = 'white';
+  ctx.stroke();
   ctx.restore();
 }
