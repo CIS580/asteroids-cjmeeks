@@ -4,12 +4,15 @@
 const Game = require('./game.js');
 const Player = require('./player.js');
 const EntityManager = require('./entity-manager.js');
+const Asteroid = require('./asteroid.js');
 
 /* Global variables */
 var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
 var em = new EntityManager(canvas);
 var player = new Player({x: canvas.width/2, y: canvas.height/2}, canvas, em);
+var asteroids = [];
+asteroids.push(new Asteroid(100, 100, 1, 25, 10));
 em.addPlayer(player);
 /**
  * @function masterLoop
