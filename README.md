@@ -58,6 +58,8 @@ The bundle will automatically be re-created every time you change a source file.
 ## Credits
 The frog art was provided by [tgfcoder](http://opengameart.org/users/tgfcoder) of [Open Game Art](http://opengameart.org) as a public domain work.
 
+Background art provided by fredburn at https://www.walldevil.com/887844-virgo-cluster-wallpaper.html
+
 Mini and Sports Car art was provided by  [bahi](http://opengameart.org/users/bahi) of [Open Game Art](http://opengameart.org) under a CC-BY license.
 
 Sedan and Pickup art was provided by  [bahi](http://opengameart.org/users/bahi) of [Open Game Art](http://opengameart.org) under a CC-BY license.

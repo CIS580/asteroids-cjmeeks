@@ -14,7 +14,6 @@ module.exports = exports = Bullet;
  */
 function Bullet(x,y, angle, number) {
   this.state = "idle";
-  //console.log(this.position.y);
   this.number = number;
   this.x = x;
   this.y = y;

@@ -19,6 +19,8 @@ function Player(position, canvas, em) {
   this.worldWidth = canvas.width;
   this.worldHeight = canvas.height;
   this.time = 0;
+  this.collisionTime = 0;
+  this.lives = 3;
   this.state = "idle";
   this.color = 'red';
   this.position = {
@@ -87,6 +89,8 @@ function Player(position, canvas, em) {
  * {DOMHighResTimeStamp} time the elapsed time since the last frame
  */
 Player.prototype.update = function(time) {
+
+    this.checkShipCollisions(time);
   // Apply angular velocity
   if(this.steerLeft) {
     this.angle += time * 0.005;
@@ -156,16 +160,36 @@ Player.prototype.render = function(time, ctx) {
   }
   ctx.restore();
 }
-Player.prototype.renderCollisionCircle = function(time, ctx){
-    ctx.save();
-    console.log(this.position, this.radius);
-    ctx.beginPath();
-    ctx.strokeStyle = 'white';
-    ctx.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI, false);
-    ctx.stroke();
-    ctx.restore();
+
+Player.prototype.checkShipCollisions = function(time){
+    this.collisionTime += time;
+    if(this.collisionTime > 5000){
+        for(var i = 0; i < this.em.asteroids.length; i++){
+            var distCollision = Math.pow(this.radius + this.em.asteroids[i].radius, 2);
+            var distSquared = Math.pow(this.position.x - this.em.asteroids[i].x, 2) + Math.pow(this.position.y - this.em.asteroids[i].y, 2);
+            if(distSquared < distCollision){
+                this.lives--;
+                this.reset();
+                this.em.shipHit.play();
+                console.log("collision");
+            }
+        }
+    }
 }
 
-Player.prototype.checkShipCollisions = function(){
+Player.prototype.reset = function(){
+    this.position.x = this.worldWidth/2;
+    this.position.y = this.worldHeight/2;
+    this.velocity.x = 0;
+    this.velocity.y = 0;
+    this.angle = 0;
+    this.collisionTime = 0;
+}
 
+Player.prototype.warp = function(){
+    this.position.x = Math.random()*this.worldWidth;
+    this.position.y = Math.random()*this.worldHeight;
+    this.velocity.x = 0;
+    this.velocity.y = 0;
+    this.collisionTime = 3000;
 }

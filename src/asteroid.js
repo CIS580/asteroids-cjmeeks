@@ -15,12 +15,21 @@ module.exports = exports = Asteroid;
 function Asteroid(x,y, velocity, angle, radius, canvas, number) {
     this.worldWidth = canvas.width;
     this.worldHeight = canvas.height;
+    console.log(number);
     this.astNumber = number;
-  this.state = "idle";
-  //console.log(this.position.y);
+  this.state = "idle";;
   this.x = x;
   this.y = y;
   this.radius = radius;
+  this.totalVelocity;
+  if(velocity > 2){
+      this.totalVelocity = 2;
+  }
+  else{
+      this.totalVelocity = velocity;
+  }
+
+
   this.velocity = {
     x: Math.sin(angle)* velocity,
     y: Math.cos(angle)* velocity

@@ -1,11 +1,13 @@
 "use strict";
 module.exports = exports = EntityManager;
 const Vector = require('./vector.js');
+const Asteroid = require('./asteroid.js');
 
 function EntityManager(canvas){
     this.wWidth = canvas.width;
     this.wHeight = canvas.height;
     this.player = undefined;
+    this.canvas = canvas;
     this.bullets = [];
     this.asteroids = [];
     this.axisList = [];
@@ -13,7 +15,6 @@ function EntityManager(canvas){
     this.shoot = new Audio('./assets/Laser_Shoot.wav');
     this.hit = new Audio('./assets/Explosion.wav');
     this.shipHit = new Audio('./assets/ShipHit.wav');
-    var self = this;
 }
 
 EntityManager.prototype.addPlayer = function(player){
@@ -23,9 +24,14 @@ EntityManager.prototype.addPlayer = function(player){
 EntityManager.prototype.addBullet = function(bullet){
     this.bullets.push(bullet);
 }
-EntityManager.prototype.addAsteroid = function(asteroid){
-    this.asteroids.push(asteroid);
-
+EntityManager.prototype.addAsteroids = function(level){
+    for(var i = 0; i < 9 + level; i++){
+        var temp = new Asteroid(Math.random()*this.canvas.width, Math.random()*this.canvas.height, Math.random()*2, Math.random()* 360, Math.random()* (50 - 20) + 20,this.canvas, i+1);
+        this.asteroids.push(temp);
+    }
+    this.axisList = this.asteroids;
+    this.axisList.sort(function(a,b){return a.x - b.x});
+    console.log(this.asteroids);
 }
 
 EntityManager.prototype.update = function(time){
@@ -54,7 +60,6 @@ EntityManager.prototype.update = function(time){
 
 EntityManager.prototype.render = function(time, ctx){
     this.player.render(time, ctx);
-    this.player.renderCollisionCircle(time, ctx);
     this.bullets.forEach(function(b){
         b.render(time, ctx);
     });
@@ -77,16 +82,11 @@ EntityManager.prototype.deleteAsteroid = function(collisions){
             numbers.push(temp[0].astNumber);
         });
         this.asteroids = ast;
-
-        //delete from axis list
-        for(var i = 0; i < numbers.length; i++){
-            for(var j = 0; j < axis.length; j++){
-                if(axis[j].astNumber == numbers[i]){
-                    axis.splice(j, 1);
-                }
-            }
+        for(var i = 0; i < this.asteroids.length; i++){
+            this.asteroids[i].astNumber = i + 1;
         }
-        this.axisList = axis;
+        this.axisList = this.asteroids;
+        this.axisList.sort(function(a,b){return a.x - b.x});
     }
 
 }
@@ -97,12 +97,16 @@ EntityManager.prototype.deleteBullet = function(collisions){
             bulls.splice(index.bullet, 1);
         });
         this.bullets = bulls;
+        for(var i = 0; i < this.bullets.length; i++){
+            this.bullets[i].number = i + 1;
+        }
     }
 
 }
 
 EntityManager.prototype.checkBulletCollisions = function(){
     var collisions = [];
+    var asteroidsKilled = [];
 
     for(var i = 0; i < this.bullets.length; i++){
         for(var j = 0; j < this.asteroids.length; j++){
@@ -110,12 +114,32 @@ EntityManager.prototype.checkBulletCollisions = function(){
             var bulletDistance = Math.pow(this.asteroids[j].radius, 2);
             if(distanceSqrd < bulletDistance){
                 collisions.push({bullet: i, asteroid: j});
+                asteroidsKilled.push(this.asteroids[j]);
+                console.log("bulletkill")
             }
         }
     }
     //handle collisions
     this.deleteAsteroid(collisions);
     this.deleteBullet(collisions);
+    var ast = this.asteroids;
+    var canvas = this.canvas;
+    asteroidsKilled.forEach(function(a){
+        if(a.radius/2 >= 10){
+            console.log("split");
+            var x1 = (Math.cos(a.angle+90)*a.radius) + a.x + 10;
+            var y1 = (Math.sin(a.angle+90)*a.radius) + a.y + 10;
+            var ast1 = new Asteroid(x1, y1,a.totalVelocity, (a.angle+90), Math.floor(a.radius/2), canvas, ast.length+1);
+            ast.push(ast1);
+            var x2 = (Math.cos(a.angle-90)*a.radius) + a.x + 10;
+            var y2 = (Math.sin(a.angle-90)*a.radius) + a.y + 10;
+            ast.push(new Asteroid(x2, y2,a.totalVelocity, (a.angle-90), Math.floor(a.radius/2), canvas, ast.length+1));
+        }
+    });
+
+    this.asteroids = ast;
+    this.axisList = ast;
+    this.axisList.sort(function(a,b){return a.x - b.x});
 }
 
 EntityManager.prototype.checkAsteroidCollisions = function(){
@@ -128,10 +152,6 @@ EntityManager.prototype.checkAsteroidCollisions = function(){
         active = active.filter(function(b){
             return a.x - b.x < (a.radius + b.radius);
         });
-        // Since only asteroid within colliding distance of
-        // our current asteroid are left in the active list,
-        // we pair them with the current asteroid and add
-        // them to the potentiallyColliding array.
         active.forEach(function(b, bindex){
             potentiallyColliding.push({a: a, b: b});
         });
@@ -139,8 +159,8 @@ EntityManager.prototype.checkAsteroidCollisions = function(){
         a.color = 'white';
         active.push(a);
     });
-    //we now have a potentiallyColliding list
-    //now we check for real collisions and store those in a collision array
+    //now have a potentiallyColliding list
+    //now check for real collisions and store those in a collision array
     var collisions = [];
     var hit = this.hit;
     potentiallyColliding.forEach(function(pair){
@@ -151,7 +171,7 @@ EntityManager.prototype.checkAsteroidCollisions = function(){
             pair.a.color = 'red';
             pair.b.color = 'red';
             collisions.push(pair);
-            ///////hit.play();/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            hit.play();
         }
     });
 
@@ -161,7 +181,7 @@ EntityManager.prototype.checkAsteroidCollisions = function(){
             x: pair.a.x - pair.b.x,
             y: pair.a.y - pair.b.y
         }
-        var overlap = (pair.a.radius + pair.b.radius + 2) - Vector.magnitude(collisionNormal);
+        var overlap = (pair.a.radius + pair.b.radius + 5) - Vector.magnitude(collisionNormal);
         var collisionNormal = Vector.normalize(collisionNormal);
 
         pair.a.x += collisionNormal.x * overlap / 2;
