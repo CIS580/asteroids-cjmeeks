@@ -12,9 +12,11 @@ module.exports = exports = Asteroid;
  * Creates a new player object
  * @param {Postition} position object specifying an x and y
  */
-function Asteroid(x,y, velocity, angle, radius) {
+function Asteroid(x,y, velocity, angle, radius, canvas, number) {
+    this.worldWidth = canvas.width;
+    this.worldHeight = canvas.height;
+    this.astNumber = number;
   this.state = "idle";
-  console.log(x);
   //console.log(this.position.y);
   this.x = x;
   this.y = y;
@@ -24,7 +26,9 @@ function Asteroid(x,y, velocity, angle, radius) {
     y: Math.cos(angle)* velocity
 };
   this.angle = angle;
+  this.color = 'white';
 }
+
 
 
 
@@ -36,6 +40,13 @@ Asteroid.prototype.update = function(time) {
   // Apply velocity
   this.x -= this.velocity.x;
   this.y -= this.velocity.y;
+
+  if(this.x < 0 - this.radius) this.x += this.worldWidth;
+  if(this.x > this.worldWidth + this.radius) this.x -= this.worldWidth + (2*this.radius);
+  if(this.y < 0 - this.radius) this.y += this.worldHeight + (this.radius * 2);
+  if(this.y > this.worldHeight + this.radius) this.y -= this.worldHeight + (2*this.radius);
+
+
 }
 
 /**
@@ -46,11 +57,9 @@ Asteroid.prototype.update = function(time) {
 Asteroid.prototype.render = function(time, ctx) {
   ctx.save();
   // Draw bullet
-  ctx.translate(this.x, this.y);
+  ctx.strokeStyle = this.color;
   ctx.beginPath();
   ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false);
-  ctx.closePath();
-  ctx.strokeStyle = 'white';
   ctx.stroke();
   ctx.restore();
 }

@@ -20,6 +20,7 @@ function Player(position, canvas, em) {
   this.worldHeight = canvas.height;
   this.time = 0;
   this.state = "idle";
+  this.color = 'red';
   this.position = {
     x: position.x,
     y: position.y
@@ -29,7 +30,7 @@ function Player(position, canvas, em) {
     y: 0
   }
   this.angle = 0;
-  this.radius  = 64;
+  this.radius  = 10;
   this.thrusting = false;
   this.steerLeft = false;
   this.steerRight = false;
@@ -99,8 +100,8 @@ Player.prototype.update = function(time) {
       x: Math.sin(this.angle),
       y: Math.cos(this.angle)
     }
-    this.velocity.x -= acceleration.x/3;
-    this.velocity.y -= acceleration.y/3;
+    this.velocity.x -= acceleration.x/5;
+    this.velocity.y -= acceleration.y/5;
   }
   // Apply velocity
   this.position.x += this.velocity.x;
@@ -114,12 +115,9 @@ Player.prototype.update = function(time) {
   //delete bullets that left the world
   this.time+=time
   if(this.time > MS_PER_FRAME && this.fire){
-      console.log(this.position);
-
-      var bullet = new Bullet(this.position.x,this.position.y, this.angle);
-      console.log(bullet);
+      var bullet = new Bullet(this.position.x,this.position.y, this.angle, this.em.bullets.length+1);
       this.em.addBullet(bullet);
-      console.log(this.em);
+      this.em.shoot.play();
       this.time = 0;
   }
 }
@@ -143,6 +141,8 @@ Player.prototype.render = function(time, ctx) {
   ctx.closePath();
   ctx.strokeStyle = 'white';
   ctx.stroke();
+  //draw player collision
+
 
   // Draw engine thrust
   if(this.thrusting) {
@@ -155,4 +155,17 @@ Player.prototype.render = function(time, ctx) {
     ctx.stroke();
   }
   ctx.restore();
+}
+Player.prototype.renderCollisionCircle = function(time, ctx){
+    ctx.save();
+    console.log(this.position, this.radius);
+    ctx.beginPath();
+    ctx.strokeStyle = 'white';
+    ctx.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI, false);
+    ctx.stroke();
+    ctx.restore();
+}
+
+Player.prototype.checkShipCollisions = function(){
+
 }

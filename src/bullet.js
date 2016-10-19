@@ -12,10 +12,10 @@ module.exports = exports = Bullet;
  * Creates a new player object
  * @param {Postition} position object specifying an x and y
  */
-function Bullet(x,y, angle) {
+function Bullet(x,y, angle, number) {
   this.state = "idle";
-  console.log(x);
   //console.log(this.position.y);
+  this.number = number;
   this.x = x;
   this.y = y;
   this.absVelocity = 4;
@@ -52,8 +52,8 @@ Bullet.prototype.render = function(time, ctx) {
   ctx.rotate(-this.angle);
   ctx.beginPath();
   ctx.moveTo(-3, 0);
-  ctx.lineTo(-3, 5);
-  ctx.lineTo(3, 5);
+  ctx.lineTo(-3, 6);
+  ctx.lineTo(3, 6);
   ctx.lineTo(3, 0);
   ctx.closePath();
   ctx.fillStyle = 'white';

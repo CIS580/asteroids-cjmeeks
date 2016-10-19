@@ -12,8 +12,15 @@ var game = new Game(canvas, update, render);
 var em = new EntityManager(canvas);
 var player = new Player({x: canvas.width/2, y: canvas.height/2}, canvas, em);
 var asteroids = [];
-asteroids.push(new Asteroid(100, 100, 1, 25, 10));
+var level = 1;
+var lives = 3;
 em.addPlayer(player);
+for(var i = 0; i < 9 + level; i++){
+    var temp = new Asteroid(Math.random()*canvas.width, Math.random()*canvas.height, Math.random()*3, Math.random()* 360, Math.random()*(40 - 10) + 10 ,canvas, i+1);
+    em.addAsteroid(temp);
+    em.axisList.push(temp);
+}
+em.axisList.sort(function(a,b){return a.x - b.x});
 /**
  * @function masterLoop
  * Advances the game in sync with the refresh rate of the screen
